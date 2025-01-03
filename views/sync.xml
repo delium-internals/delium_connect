@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <record id="view_odoo_sync_list" model="ir.ui.view">
+    <field name="name">odoo.sync.list</field>
+    <field name="model">odoo.sync</field>
+    <field name="arch" type="xml">
+      <list>
+        <field name="odoo_host" />
+        <field name="dcove_tunnel" />
+        <field name="database_user" />
+        <field name="database_name" />
+        <field name="store_ids" />
+      </list>
+    </field>
+  </record>
+
+  <record id="view_odoo_sync_form" model="ir.ui.view">
+    <field name="name">odoo.sync.form</field>
+    <field name="model">odoo.sync</field>
+    <field name="arch" type="xml">
+      <form string="Sync Config">
+        <p><b><i>
+          The below configurations are used during the sync of data. They allow the setup of access to the database and where the server to which
+          the data is pushed to.
+        </i></b></p>
+        <sheet name="Remote Configs">
+          <div class="o_stat_text">
+            <h1>Remote Configs</h1>
+          </div>
+          <group>
+            <div class="o_stat_text">Host URL to connect to your odoo database.</div>
+            <field name="odoo_host" />
+            <div class="o_stat_text">Remote URL for the server that will sync your data. Your app will be registered to this running instance.</div>
+            <field name="dcove_tunnel" />
+            <div class="o_stat_text">A sync token provided by the Delium Team. This token uniquely identifies you to Delium.</div>
+            <field name="sync_token" placeholder="Enter Sync Token." />
+          </group>
+          <div class="o_stat_text">
+            <h1>Database Configs</h1>
+          </div>
+          <group>
+            <div class="o_stat_text">Generate an API token and paste it here. Ensure the token's validity is persistent</div>
+            <field name="database_pass" placeholder="Enter new API Key"/>
+            <div class="o_stat_text">Your login name</div>
+            <field name="database_user" />
+            <div class="o_stat_text">Your database name. In most cases it is the same as your login name</div>
+            <field name="database_name" />
+            <div class="o_stat_text">Stores to sync data.</div>
+            <field name="store_ids" widget="many2many_dropdown"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_sync_settings_input" model="ir.actions.act_window">
+    <field name="name">Sync Config</field>
+    <field name="res_model">odoo.sync</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        This form is used to configure the sync settings for an integration with Delium's DCove.
+      </p>
+    </field>
+  </record>
+</odoo>
