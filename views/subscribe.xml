@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <record id="view_delium_subscription_list" model="ir.ui.view">
+    <field name="name">delium.subscription.list</field>
+    <field name="model">delium.subscription</field>
+    <field name="arch" type="xml">
+      <list>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_delium_subscription_form" model="ir.ui.view">
+    <field name="name">delium.subscription.form</field>
+    <field name="model">delium.subscription</field>
+    <field name="arch" type="xml">
+      <form string="Subscription Details">
+        <p><b><i>
+          The below details are required for a subscription. Save these details. On save you will receive an OTP for verification.
+          Enter the OTP in the OTP verification form to complete the subscription and start the sync.
+        </i></b></p>
+        <sheet name="Onboarding Details">
+          <div class="o_stat_text">
+            <h1>Business Details</h1>
+          </div>
+          <group>
+            <div class="o_stat_text">Name of your business</div>
+            <field name="name" />
+            <div class="o_stat_text">External Client ID uniquely identifies you as a customer. This will be used when generating the URL for the Miner.</div>
+            <field name="external_client_id" />
+            <div class="o_stat_text">Vertical of your business</div>
+            <field name="vertical" />
+            <div class="o_stat_text">Country</div>
+            <field name="vertical" />
+            <div class="o_stat_text">GST Local or GST Remote</div>
+            <field name="tax_name" />
+            <div class="o_stat_text">GST No of your business</div>
+            <field name="gst_no" />
+            <div class="o_stat_text">Business Address for invoicing.</div>
+            <field name="business_address" />
+            <div class="o_stat_text">Business Phone Number for invoicing</div>
+            <field name="business_number" />
+            <div class="o_stat_text">Business Email ID for invoicing</div>
+            <field name="business_email" />
+          </group>
+          <div class="o_stat_text">
+            <h1>User Details</h1>
+          </div>
+          <group>
+            <div class="o_stat_text">Initial User Name for The Miner</div>
+            <field name="user_name" />
+            <div class="o_stat_text">Initial User Email for The Miner</div>
+            <field name="user_email" />
+            <div class="o_stat_text">Initial User Phone Number for The Miner</div>
+            <field name="user_phone" />
+          </group>
+          <group>
+            <div class="o_stat_text">
+              <h1>Validate your subscription</h1>
+            </div>
+            <button name="resend_otp" type="object" string="Send/Resend OTP" class="btn-primary"/>
+            <div class="o_stat_text">Enter the OTP for verification</div>
+            <field name="otp_input"/>
+            <button name="verify_otp" type="object" string="Verify OTP" class="btn-success"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_subscribe_to_de" model="ir.actions.act_window">
+    <field name="name">Subscribe to Delium</field>
+    <field name="res_model">delium.subscription</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Subscribe to Delium's The Miner.
+      </p>
+    </field>
+  </record>
+</odoo>
