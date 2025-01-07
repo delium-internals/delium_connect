@@ -36,12 +36,12 @@
             <field name="tax_name" />
             <div class="o_stat_text">GST No of your business</div>
             <field name="gst_no" />
-            <div class="o_stat_text">Business Address for invoicing.</div>
-            <field name="business_address" />
-            <div class="o_stat_text">Business Phone Number for invoicing</div>
-            <field name="business_number" />
-            <div class="o_stat_text">Business Email ID for invoicing</div>
-            <field name="business_email" />
+            <div class="o_stat_text">Billing Address for invoicing.</div>
+            <field name="billing_address" />
+            <div class="o_stat_text">Billing Phone Number for invoicing</div>
+            <field name="billing_number" />
+            <div class="o_stat_text">Billing Email ID for invoicing</div>
+            <field name="billing_email" />
           </group>
           <div class="o_stat_text">
             <h1>User Details</h1>
