@@ -9,42 +9,42 @@ class Subscription(models.Model):
   _description = "Subscribe to Delium's The Miner"
 
   # default fields. not to be shown on form
-  licensed_products = fields.Char(string="licensed_products", required=True, default='The Eye', readonly=True)
-  vendor_name = fields.Char(string="vendor_name", required=True, default='odoo', readonly=True)
-  product_name = fields.Char(string="product_name", required=True, default='odoo', readonly=True)
-  use_internal_auth = fields.Char(string="use_internal_auth", required=True, default=True, readonly=True)
-  licensing_stores = fields.Char(string="licensing_stores", required=True, default='["*"]', readonly=True)
-  env = fields.Char(string="env", required=True, default="prod", selection=[('dev', 'dev'), ('qa', 'qa'), ('prod', 'prod')])
+  licensed_products = fields.Char(string="Licensed Products", required=True, default='The Eye', readonly=True)
+  vendor_name = fields.Char(string="Vendor Name", required=True, default='odoo', readonly=True)
+  product_name = fields.Char(string="Product Name", required=True, default='odoo', readonly=True)
+  use_internal_auth = fields.Char(string="Use Internal Auth", required=True, default=True, readonly=True)
+  licensing_stores = fields.Char(string="Licensing Stores", required=True, default='["*"]', readonly=True)
+  envir = fields.Char(string="Envir", required=True, default="prod", selection=[('dev', 'dev'), ('qa', 'qa'), ('prod', 'prod')])
 
   # Filled on response
-  domain = fields.Char(string="domain", readonly=True)
-  api_token = fields.Char(string="api_token", readonly=True)
-  otp_validated = fields.Char(string="otp_validated", default=False, readonly=True)
-  otp_input = fields.Char(string="otp_input")
+  domain = fields.Char(string="Domain", readonly=True)
+  api_token = fields.Char(string="Api Token", readonly=True)
+  otp_validated = fields.Char(string="Otp Validated", default=False, readonly=True)
+  otp_input = fields.Char(string="Otp Input")
 
-  external_client_id = fields.Char(string="external_client_id", required=True)
-  name = fields.Char(string="name", required=True)
-  vertical = fields.Char(string="vertical", required=True, selection=[('cpg', 'CPG'), ('cdit', 'CDIT')])
-  country = fields.Char(string="country", required=True)
-  user_name = fields.Char(string="user_name", required=True)
-  user_phone = fields.Char(string="user_phone", required=True)
-  user_email = fields.Char(string="user_email", required=True)
-  billing_address = fields.Char(string="billing_address", required=True)
-  billing_number = fields.Char(string="billing_number", required=True)
-  billing_email = fields.Char(string="billing_email", required=True)
-  tax_name = fields.Char(string="tax_name", required=True)
-  gst_no = fields.Char(string="gst_no", required=True)
+  external_client_id = fields.Char(string="External Client Id", required=True)
+  name = fields.Char(string="Name", required=True)
+  vertical = fields.Char(string="Vertical", required=True, selection=[('cpg', 'CPG'), ('cdit', 'CDIT')])
+  country = fields.Char(string="Country", required=True)
+  user_name = fields.Char(string="User Name", required=True)
+  user_phone = fields.Char(string="User Phone", required=True)
+  user_email = fields.Char(string="User Email", required=True)
+  billing_address = fields.Char(string="Billing Address", required=True)
+  billing_number = fields.Char(string="Billing Number", required=True)
+  billing_email = fields.Char(string="Billing Email", required=True)
+  tax_name = fields.Char(string="Tax Name", required=True)
+  gst_no = fields.Char(string="Gst No", required=True)
 
   proboscis_host = fields.Char(string="Proboscis Host")
 
   @api.onchange('env')
   def _onchange_env(self):
     """Update the proboscis_host field based on the environment selection."""
-    if self.env == 'dev':
+    if self.envir == 'dev':
       self.proboscis_host = 'https://qa.local:9090'
-    elif self.env == 'qa':
+    elif self.envir == 'qa':
       self.proboscis_host = 'https://proboscis.delium.dev/api'
-    elif self.env == 'prod':
+    elif self.envir == 'prod':
       self.proboscis_host = 'https://proboscis.delium.io/api'
 
 
@@ -74,8 +74,7 @@ class Subscription(models.Model):
   def create(self, vals):
     request_body = self.prepare_request_body()
     headers = {'Content-Type': 'application/json'}
-    logger.info()
-    res = requests.get(f"{self.proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
+    res = requests.post(f"{self.proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
     if res.status_code == 200:
       self.env['ir.actions.client'].notify({
         'title': f'Subsciption request recorded. Verification Pending',
@@ -102,7 +101,7 @@ class Subscription(models.Model):
   def write(self, vals):
     request_body = self.prepare_request_body()
     headers = {'Content-Type': 'application/json'}
-    res = requests.get(f"{self.proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
+    res = requests.post(f"{self.proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
     if res.status_code == 200:
       response_body = res.json()
       self.env['ir.actions.client'].notify({
@@ -127,7 +126,7 @@ class Subscription(models.Model):
     return super(Subscription, self).write(vals)
 
   def resend_otp(self):
-    res = requests.get(f"{self.proboscis_host}/ext/ephemeral_client/${self.domain}/{self.user_phone}/resend_otp", verify=False)
+    res = requests.post(f"{self.proboscis_host}/ext/ephemeral_client/${self.domain}/{self.user_phone}/resend_otp", verify=False)
     if res.status_code == 200:
       return {
           'type': 'ir.actions.client',
@@ -152,7 +151,7 @@ class Subscription(models.Model):
   def verify_otp(self):
     request_body = self.prepare_request_body()
     headers = {'Content-Type': 'application/json'}
-    res = requests.get(f"{self.proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/{self.otp_input}", verify=False, data=json.dumps(request_body), headers=headers)
+    res = requests.post(f"{self.proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/{self.otp_input}", verify=False, data=json.dumps(request_body), headers=headers)
     if res.status_code == 200:
       response_body = res.json()
       self.api_token = response_body['apiToken']
