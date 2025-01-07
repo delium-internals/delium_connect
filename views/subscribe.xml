@@ -20,45 +20,42 @@
           Enter the OTP in the OTP verification form to complete the subscription and start the sync.
         </i></b></p>
         <sheet name="Onboarding Details">
-          <div class="o_stat_text">
-            <h1>Business Details</h1>
-          </div>
           <group>
-            <div class="o_stat_text">Name of your business</div>
-            <field name="name" />
-            <div class="o_stat_text">External Client ID uniquely identifies you as a customer. This will be used when generating the URL for the Miner.</div>
-            <field name="external_client_id" />
-            <div class="o_stat_text">Vertical of your business</div>
-            <field name="vertical" />
-            <div class="o_stat_text">Country</div>
-            <field name="vertical" />
-            <div class="o_stat_text">GST Local or GST Remote</div>
-            <field name="tax_name" />
-            <div class="o_stat_text">GST No of your business</div>
-            <field name="gst_no" />
-            <div class="o_stat_text">Billing Address for invoicing.</div>
-            <field name="billing_address" />
-            <div class="o_stat_text">Billing Phone Number for invoicing</div>
-            <field name="billing_number" />
-            <div class="o_stat_text">Billing Email ID for invoicing</div>
-            <field name="billing_email" />
-          </group>
-          <div class="o_stat_text">
-            <h1>User Details</h1>
-          </div>
-          <group>
-            <div class="o_stat_text">Initial User Name for The Miner</div>
-            <field name="user_name" />
-            <div class="o_stat_text">Initial User Email for The Miner</div>
-            <field name="user_email" />
-            <div class="o_stat_text">Initial User Phone Number for The Miner</div>
-            <field name="user_phone" />
+            <group>
+              <separator string="Business Details"/>
+              <div class="o_stat_text">Name of your business</div>
+              <field name="name" />
+              <div class="o_stat_text">External Client ID uniquely identifies you as a customer. This will be used when generating the URL for the Miner.</div>
+              <field name="external_client_id" />
+              <div class="o_stat_text">Vertical of your business</div>
+              <field name="vertical" />
+              <div class="o_stat_text">Country</div>
+              <field name="country" />
+              <div class="o_stat_text">GST Local or GST Remote</div>
+              <field name="tax_name" />
+              <div class="o_stat_text">GST No of your business</div>
+              <field name="gst_no" />
+              <div class="o_stat_text">Billing Address for invoicing.</div>
+              <field name="billing_address" />
+              <div class="o_stat_text">Billing Phone Number for invoicing</div>
+              <field name="billing_number" />
+              <div class="o_stat_text">Billing Email ID for invoicing</div>
+              <field name="billing_email" />
+            </group>
+            <group>
+              <separator string="User Details"/>
+              <div class="o_stat_text">Initial User Name for The Miner</div>
+              <field name="user_name" />
+              <div class="o_stat_text">Initial User Email for The Miner</div>
+              <field name="user_email" />
+              <div class="o_stat_text">Initial User Phone Number for The Miner</div>
+              <field name="user_phone" />
+            </group>
           </group>
           <group>
-            <div class="o_stat_text">
-              <h1>Validate your subscription</h1>
-            </div>
+            <separator string="Validate your subscription"/>
             <button name="resend_otp" type="object" string="Send/Resend OTP" class="btn-primary"/>
+            <separator />
             <div class="o_stat_text">Enter the OTP for verification</div>
             <field name="otp_input"/>
             <button name="verify_otp" type="object" string="Verify OTP" class="btn-success"/>
