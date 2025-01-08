@@ -5,7 +5,16 @@
     <field name="name">delium.subscription.list</field>
     <field name="model">delium.subscription</field>
     <field name="arch" type="xml">
-      <list>
+      <list class="text-center">
+        <field name="external_client_id" class="text-center" />
+        <field name="name" class="text-center"/>
+        <field name="licensed_products" class="text-center"/>
+        <field name="vertical" class="text-center"/>
+        <field name="domain" class="text-center"/>
+        <field name="user_name" class="text-center"/>
+        <field name="user_phone" class="text-center"/>
+        <field name="user_email" class="text-center"/>
+        <field name="otp_validated" class="text-center"/>
       </list>
     </field>
   </record>
