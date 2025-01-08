@@ -26,7 +26,7 @@ class Subscription(models.Model):
   # Filled on response
   domain = fields.Char(string="Domain", readonly=True)
   api_token = fields.Char(string="Api Token", readonly=True)
-  otp_validated = fields.Char(string="Otp Validated", default=False, readonly=True)
+  otp_validated = fields.Boolean(string="Otp Validated", default=False, readonly=True)
   otp_input = fields.Char(string="OTP: ")
 
   external_client_id = fields.Char(string="External Client Id", required=True)
@@ -61,7 +61,7 @@ class Subscription(models.Model):
       "licensedProducts": [vals.get('licensed_products', self.licensed_products)],
       "productName": vals.get('product_name', self.product_name),
       "vendorName": vals.get('vendor_name', self.vendor_name),
-      "vertical": vals.get('vertical', self.vertical),
+      "vertical": vals.get('vertical', self.vertical).lower(),
       "useInternalAuth": vals.get('use_internal_auth', self.use_internal_auth),
       "userName": vals.get('user_name', self.user_name),
       "userPhone": vals.get('user_phone', self.user_phone),
