@@ -238,3 +238,32 @@ class Subscription(models.Model):
         }
       }
 
+  def resubscribe(self, vals=None):
+
+    res = self.subscribe(vals)
+    if res.status_code == 200:
+      response_body = res.json()
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "info",
+          "title": _('Subscription success'),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+
+      vals['domain'] = response_body['domain']
+      vals['otp_validated'] = False
+    else:
+      logger.info("[Resubscribe] Subscribing to The Miner failed.")
+      response_body = res.json()
+
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Subscription request failed.',
+          'message': response_body['message'],
+          'type': 'danger',
+        }
+      }
