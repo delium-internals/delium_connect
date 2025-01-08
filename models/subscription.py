@@ -1,9 +1,10 @@
 import requests
 
 import json
+from odoo import _
 from odoo import *
-from odoo.addons.odeosync.logger import logger
-
+from odoo.addons.odeosync.utils import logger
+from odoo.exceptions import ValidationError, UserError
 
 proboscis_mapper = {
   'dev': 'https://qa.local:9090',
@@ -20,8 +21,7 @@ class Subscription(models.Model):
   vendor_name = fields.Char(string="Vendor Name", required=True, default='odoo', readonly=True)
   product_name = fields.Char(string="Product Name", required=True, default='odoo', readonly=True)
   use_internal_auth = fields.Char(string="Use Internal Auth", required=True, default=True, readonly=True)
-  licensing_stores = fields.Char(string="Licensing Stores", required=True, default='["*"]', readonly=True)
-  envir = fields.Selection(string="Envir", required=True, default="prod", selection=[('dev', 'dev'), ('qa', 'qa'), ('prod', 'prod')])
+  envir = fields.Selection(string="Envir", required=True, default="dev", selection=[('dev', 'dev'), ('qa', 'qa'), ('prod', 'prod')])
 
   # Filled on response
   domain = fields.Char(string="Domain", readonly=True)
@@ -50,13 +50,15 @@ class Subscription(models.Model):
 
 
   def prepare_request_body(self, vals):
+    if vals is None:
+      vals = {}
     logger.info("======================")
     logger.info(f"Vals: {vals}")
     logger.info("======================")
     body = {
       "name": vals.get('name', self.name),
       "country": vals.get('country', self.country).upper(),
-      "licensedProducts": vals.get('licensed_products', self.licensed_products),
+      "licensedProducts": [vals.get('licensed_products', self.licensed_products)],
       "productName": vals.get('product_name', self.product_name),
       "vendorName": vals.get('vendor_name', self.vendor_name),
       "vertical": vals.get('vertical', self.vertical),
@@ -66,7 +68,7 @@ class Subscription(models.Model):
       "userEmail": vals.get('user_email', self.user_email),
       "externalClientId": f"odoo{vals.get('external_client_id', self.external_client_id)}",
       "countryCode": vals.get('country', self.country)[:2].upper(),
-      "licensingStores": vals.get('licensing_stores', self.licensing_stores),
+      "licensingStores": ["*"],
       "billingAddress": vals.get('billing_address', self.billing_address),
       "billingNumber": vals.get('billing_number', self.billing_number),
       "billingEmail": vals.get('billing_email', self.billing_email),
@@ -78,66 +80,103 @@ class Subscription(models.Model):
 
   @api.model
   def create(self, vals):
+    current_partner = self.env.user.partner_id
+
+    self.env.cr.execute("""SELECT * FROM delium_subscription """)
+    result = self.env.cr.fetchone()
+
+    if result is not None:
+      raise ValidationError("Subscription already exists. You can have only one subscription to the Miner.")
+
     # Set defaults
     vals['licensed_products'] = 'The Eye'
     vals['vendor_name'] = 'odoo'
     vals['product_name'] = 'odoo'
     vals['use_internal_auth'] = True
-    vals['licensing_stores'] = '["*"]'
 
+    record = super(Subscription, self).create(vals)
+
+    res = self.subscribe(vals)
+
+    if res.status_code == 200:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "info",
+          "title": _("Subsciption request recorded. Verification Pending"),
+          "message": _(res.json()['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+      response_body = res.json()
+      vals['domain'] = response_body['domain']
+      vals['otp_validated'] = False
+    else:
+      logger.info("[Create] Subscribing to The Miner failed.")
+      response_body = res.json()
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "danger",
+          "title": _("Subsciption request failed."),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+
+    return record
+
+  def subscribe(self, vals=None):
     request_body = self.prepare_request_body(vals)
     headers = {'Content-Type': 'application/json'}
     proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
-    if res.status_code == 200:
-      self.env['ir.actions.client'].notify({
-        'title': f'Subsciption request recorded. Verification Pending',
-        'message': f'Please check your email {self.user_email} for the OTP. Upon verification, your subscription will be complete.',
-        'type': 'info',
-      })
-      response_body = res.json()
-      vals['domain'] = response_body['domain']
-      vals['otp_validated'] = False
-      self.env['ir.actions.client'].reload()
-    else:
-      return {
-        'type': 'ir.actions.client',
-        'tag': 'display_notification',
-        'params': {
-          'title': 'Subsciption request failed.',
-          'message': 'Please contact support for help.',
-          'type': 'danger',
-        }
-      }
-    return super(Subscription, self).create(vals)
+    return res
+
 
   @api.model
   def write(self, vals):
-    request_body = self.prepare_request_body(vals)
-    headers = {'Content-Type': 'application/json'}
-    proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
-    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
+    current_partner = self.env.user.partner_id
+
+    # Do not allow any changes if api token exists.
+    self.env.cr.execute("""SELECT api_token FROM delium_subscription """)
+    result = self.env.cr.fetchone()
+    if result is not None:
+      logger.info("API token already exists. No more operations performed on subscription.")
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "danger",
+          "title": _("No more edits allowed"),
+          "message": _("Your subscription details are saved and verified. Contact support to perfomr any more changes."),
+          "sticky": False,
+          "duration": 3000
+        })
+
+    res = self.subscribe(vals)
     if res.status_code == 200:
       response_body = res.json()
-      self.env['ir.actions.client'].notify({
-        'title': f'Welcome back. Thank you for subscribing again. Verification is pending',
-        'message': f'Please check your email {self.user_email} for the OTP. Upon verification, your subscription will be complete.',
-        'type': 'info',
-      })
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "info",
+          "title": _('Subscription success'),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+
       vals['domain'] = response_body['domain']
       vals['otp_validated'] = False
-      self.env['ir.actions.client'].reload()
     else:
+      logger.info("[Write] Subscribing to The Miner failed.")
       response_body = res.json()
-      return {
-        'type': 'ir.actions.client',
-        'tag': 'display_notification',
-        'params': {
-          'title': 'Subscription request failed.',
-          'message': response_body['message'],
-          'type': 'danger',
-        }
-      }
+
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification",
+        {
+          "type": "danger",
+          "title": _("Subsciption request failed."),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+
     return super(Subscription, self).write(vals)
 
   def resend_otp(self):
@@ -155,14 +194,14 @@ class Subscription(models.Model):
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/${self.domain}/{self.user_phone}/resend_otp", verify=False)
     if res.status_code == 200:
       return {
-          'type': 'ir.actions.client',
-          'tag': 'display_notification',
-          'params': {
-            'title': f'OTP Sent to your email {self.user_email}',
-            'message': 'Please check your email for the OTP',
-            'type': 'info',
-          }
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': f'OTP Sent to your email {self.user_email}',
+          'message': 'Please check your email for the OTP',
+          'type': 'info',
         }
+      }
     else:
       return {
         'type': 'ir.actions.client',
