@@ -94,8 +94,6 @@ class Subscription(models.Model):
     vals['product_name'] = 'odoo'
     vals['use_internal_auth'] = True
 
-    record = super(Subscription, self).create(vals)
-
     res = self.subscribe(vals)
 
     if res.status_code == 200:
@@ -108,8 +106,11 @@ class Subscription(models.Model):
           "duration": 3000
         })
       response_body = res.json()
+      logger.info("[Create] Response Body on create: ")
+      logger.info(response_body)
       vals['domain'] = response_body['domain']
       vals['otp_validated'] = False
+
     else:
       logger.info("[Create] Subscribing to The Miner failed.")
       response_body = res.json()
@@ -122,7 +123,7 @@ class Subscription(models.Model):
           "duration": 3000
         })
 
-    return record
+    return super(Subscription, self).create(vals)
 
   def subscribe(self, vals=None):
     request_body = self.prepare_request_body(vals)
@@ -140,7 +141,7 @@ class Subscription(models.Model):
     self.env.cr.execute("""SELECT api_token FROM delium_subscription """)
     result = self.env.cr.fetchone()
     if result is not None:
-      logger.info("API token already exists. No more operations performed on subscription.")
+      logger.info("[Write] API token already exists. No more operations performed on subscription.")
       self.env["bus.bus"]._sendone(current_partner, "simple_notification",
         {
           "type": "danger",
@@ -162,8 +163,9 @@ class Subscription(models.Model):
           "duration": 3000
         })
 
-      vals['domain'] = response_body['domain']
-      vals['otp_validated'] = False
+      self.domain = response_body['domain']
+      self.otp_validated = False
+      logger.info(f"[Write] Response Body on create: {response_body}")
     else:
       logger.info("[Write] Subscribing to The Miner failed.")
       response_body = res.json()
@@ -239,7 +241,7 @@ class Subscription(models.Model):
       }
 
   def resubscribe(self, vals=None):
-
+    current_partner = self.env.user.partner_id
     res = self.subscribe(vals)
     if res.status_code == 200:
       response_body = res.json()
@@ -251,9 +253,10 @@ class Subscription(models.Model):
           "sticky": False,
           "duration": 3000
         })
-
-      vals['domain'] = response_body['domain']
-      vals['otp_validated'] = False
+      logger.info(f"[Resubscribe] Response body: {response_body}.")
+      self.domain = response_body['domain']
+      self.otp_validated = False
+      self.save()
     else:
       logger.info("[Resubscribe] Subscribing to The Miner failed.")
       response_body = res.json()
