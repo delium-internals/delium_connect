@@ -50,7 +50,7 @@
               <field name="billing_number" />
               <div class="o_stat_text">Billing Email ID for invoicing</div>
               <field name="billing_email" />
-              <button name="resubscribe" type="object" string="Try Subscribe Again" class="btn-primary" visibility="[('domain', '!=', '')]"/>
+              <button name="resubscribe" type="object" string="Subscribe Again" class="btn-primary" />
             </group>
             <group>
               <separator string="User Details"/>
