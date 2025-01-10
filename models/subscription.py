@@ -89,6 +89,7 @@ class Subscription(models.Model):
 
   @api.model
   def create(self, vals):
+    logger.info("[delium.subscription] [Create] Running create method ...")
     current_partner = self.env.user.partner_id
 
     self.env.cr.execute("""SELECT * FROM delium_subscription """)
@@ -121,13 +122,13 @@ class Subscription(models.Model):
         "duration": 3000
       })
       response_body = res.json()
-      logger.info("[Create] Response Body on create: ")
+      logger.info("[delium.subscription] [Create] Response Body on create: ")
       logger.info(response_body)
       vals['domain'] = response_body['domain']
       vals['otp_validated'] = False
 
     else:
-      logger.info("[Create] Subscribing to The Miner failed.")
+      logger.info("[delium.subscription] [Create] Subscribing to The Miner failed.")
       response_body = res.json()
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
@@ -142,7 +143,7 @@ class Subscription(models.Model):
 
   @api.model
   def write(self, vals):
-    logger.info("[Write] Running write method... ")
+    logger.info("[delium.subscription] [Write] Running write method... ")
     current_partner = self.env.user.partner_id
 
     # Do not allow any changes if api token or domain exists.
@@ -150,7 +151,7 @@ class Subscription(models.Model):
     db_fields = self.env.cr.fetchone()
     api_token_from_db, domain_from_db, external_client_id_from_db = db_fields
     if api_token_from_db is not None:
-      logger.info("[Write] API token already exists. No more operations performed on subscription.")
+      logger.info("[delium.subscription] [Write] API token already exists. No more operations performed on subscription.")
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
         "title": _("Subscription complete and verified."),
@@ -163,7 +164,7 @@ class Subscription(models.Model):
 
     if domain_from_db is not None:
       if vals.get('external_client_id', self.external_client_id) != self.external_client_id:
-        logger.info("[Write] Already subscribed with a different external client ID. Only one subscription is allowed")
+        logger.info("[delium.subscription] [Write] Already subscribed with a different external client ID. Only one subscription is allowed")
         self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
           "type": "danger",
           "title": _("Already subscribed."),
@@ -173,7 +174,7 @@ class Subscription(models.Model):
         })
         return
       vals['external_client_id'] = self.external_client_id
-      logger.info("[Write] Already subscribed and domain exists in DB. Exiting the write method...")
+      logger.info("[delium.subscription] [Write] Already subscribed and domain exists in DB. Exiting the write method...")
       return super(Subscription, self).write(vals)
 
     res = self.subscribe(vals)
@@ -189,7 +190,7 @@ class Subscription(models.Model):
       self.domain = response_body['domain']
       self.otp_validated = False
     else:
-      logger.info("[Write] Subscribing to The Miner failed.")
+      logger.info("[delium.subscription] [Write] Subscribing to The Miner failed.")
       response_body = res.json()
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
@@ -202,6 +203,7 @@ class Subscription(models.Model):
     return super(Subscription, self).write(vals)
 
   def resend_otp(self):
+    logger.info("[delium.subscription] [Resend OTP] Resending OTP ...")
     if self.api_token:
       return {
         'type': 'ir.actions.client',
@@ -212,7 +214,7 @@ class Subscription(models.Model):
           'type': 'danger',
         }
       }
-    
+
     if not self.domain:
       return {
         'type': 'ir.actions.client',
@@ -247,6 +249,7 @@ class Subscription(models.Model):
       }
 
   def verify_otp(self):
+    logger.info("[delium.subscription] [Verify OTP] Verifying OTP ...")
     if self.api_token:
       return {
         'type': 'ir.actions.client',
@@ -315,6 +318,7 @@ class Subscription(models.Model):
       }
 
   def resubscribe(self):
+    logger.info("[delium.subscription] [Resubscribe] Resubscribing ...")
     current_partner = self.env.user.partner_id
 
     self.env.cr.execute("""SELECT api_token, domain FROM delium_subscription """)
@@ -332,7 +336,7 @@ class Subscription(models.Model):
       return
 
     if domain_from_db is not None:
-      logger.info("[Resubscribe] Subscription already exists.")
+      logger.info("[delium.subscription] [Resubscribe] Subscription already exists.")
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "info",
         "title": _("Already subscribed. Verification Pending"),
@@ -352,11 +356,10 @@ class Subscription(models.Model):
         "sticky": False,
         "duration": 3000
       })
-      logger.info(f"[Resubscribe] Response body: {response_body}.")
       self.domain = response_body['domain']
       self.otp_validated = False
     else:
-      logger.info("[Resubscribe] Subscribing to The Miner failed.")
+      logger.info("[delium.subscription] [Resubscribe] Subscribing to The Miner failed.")
       response_body = res.json()
 
       return {
