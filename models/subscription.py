@@ -202,6 +202,17 @@ class Subscription(models.Model):
     return super(Subscription, self).write(vals)
 
   def resend_otp(self):
+    if self.api_token:
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Already verified',
+          'message': "Your verification is already complete.",
+          'type': 'danger',
+        }
+      }
+    
     if not self.domain:
       return {
         'type': 'ir.actions.client',
@@ -236,6 +247,17 @@ class Subscription(models.Model):
       }
 
   def verify_otp(self):
+    if self.api_token:
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Already verified',
+          'message': "Your verification is already complete.",
+          'type': 'danger',
+        }
+      }
+
     if not self.domain:
       return {
         'type': 'ir.actions.client',
