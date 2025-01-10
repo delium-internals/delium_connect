@@ -2,7 +2,7 @@
   "name": "Odeo Sync",
   "author": "DeliumTech",
   "version": "1.0.0",
-  'depends': ['base'],
+  'depends': ['base', 'stock'],
   "data": [
     "security/ir.model.access.csv",
     "views/subscribe.xml",
