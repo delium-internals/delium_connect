@@ -16,9 +16,9 @@ dcove_mapper = {
 }
 
 
-def get_envir(model):
-  model.env.cr.execute("""SELECT envir FROM delium_environment""")
-  env_dict = model.env.cr.dictfetchone()
+def get_envir(cr):
+  cr.execute("""SELECT envir FROM delium_environment""")
+  env_dict = cr.dictfetchone()
   if env_dict is None:
     return 'dev'
   return env_dict['envir']

@@ -47,7 +47,7 @@ class Sync(models.Model):
       'allow_sync': vals.get('allow_sync', self.allow_sync)
     }
     headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', self.sync_token)}
-    dcove_host = dcove_mapper[get_envir(self)]
+    dcove_host = dcove_mapper[get_envir(self.env.cr)]
     res = requests.post(f"{dcove_host}/sync_config/register", verify=False, data=json.dumps(request_body), headers=headers)
 
     if res.status_code == 200:
