@@ -17,9 +17,9 @@ class Sync(models.Model):
   database_user = fields.Char(string="Database User", required=True)
   database_name = fields.Char(string="Database name", required=True)
   store_ids = fields.Many2many('stock.warehouse', 'odoo_sync_stores_rel', 'config_id', 'warehouse_id', string="Stores to Sync", required=True)
+  allow_sync = fields.Boolean(string="Allow Sync", required=True, default=True)
 
   def fetch_subscription_details(self):
-    logger.info("Here....")
     current_partner = self.env.user.partner_id
 
     self.env.cr.execute("""SELECT external_client_id, domain, api_token FROM delium_subscription """)
