@@ -81,11 +81,6 @@ class Subscription(models.Model):
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
     return res
 
-  @api.onchange('env')
-  def _onchange_env(self):
-    """Update the proboscis_host field based on the environment selection."""
-    self.proboscis_host = proboscis_mapper[self.get_envir()]
-    self.save()
 
   @api.model
   def create(self, vals):
