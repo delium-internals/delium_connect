@@ -22,7 +22,7 @@ class Subscription(models.Model):
   vendor_name = fields.Char(string="Vendor Name", required=True, default='odoo', readonly=True)
   product_name = fields.Char(string="Product Name", required=True, default='odoo', readonly=True)
   use_internal_auth = fields.Char(string="Use Internal Auth", required=True, default=True, readonly=True)
-  envir = fields.Selection(string="Envir", required=True, default="dev", selection=[('dev', 'dev'), ('qa', 'qa'), ('prod', 'prod')])
+
 
   # Filled on response
   domain = fields.Char(string="Domain", readonly=True)
@@ -73,18 +73,24 @@ class Subscription(models.Model):
     logger.info(f"Body: {body}")
     return body
 
+  def get_envir(self):
+    self.env.cr.execute("""SELECT envir FROM delium_environment""")
+    env_dict = self.env.cr.dictfetchone()
+    if env_dict is None:
+      return 'dev'
+    return env_dict['envir']
 
   def subscribe(self, vals=None):
     request_body = self.prepare_request_body(vals)
     headers = {'Content-Type': 'application/json'}
-    proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
+    proboscis_host = proboscis_mapper[self.get_envir()]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
     return res
 
   @api.onchange('env')
   def _onchange_env(self):
     """Update the proboscis_host field based on the environment selection."""
-    self.proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
+    self.proboscis_host = proboscis_mapper[self.get_envir()]
     self.save()
 
   @api.model
@@ -225,7 +231,7 @@ class Subscription(models.Model):
           'type': 'danger',
         }
       }
-    proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
+    proboscis_host = proboscis_mapper[self.get_envir()]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/resend_otp", verify=False)
     if res.status_code == 200:
       return {
@@ -290,7 +296,7 @@ class Subscription(models.Model):
 
     request_body = self.prepare_request_body()
     headers = {'Content-Type': 'application/json'}
-    proboscis_host = proboscis_mapper.get(self.envir, 'https://qa.local:9090')
+    proboscis_host = proboscis_mapper[self.get_envir()]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/{self.otp_input}", verify=False, data=json.dumps(request_body), headers=headers)
     if res.status_code == 200:
       response_body = res.json()
