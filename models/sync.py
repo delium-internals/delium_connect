@@ -120,3 +120,9 @@ class Sync(models.Model):
       res = self.register_to_sync(current_partner, vals)
     return super(Sync, self).write(vals)
 
+
+  def update_sync_config(self):
+    logger.info("[delium.sync] [Update Sync Config] Updating ...")
+    current_partner = self.env.user.partner_id
+    self.register_to_sync(current_partner)
+

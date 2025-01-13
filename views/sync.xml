@@ -42,7 +42,7 @@
             <field name="store_ids" widget="many2many_dropdown"/>
             <div class="o_stat_text">Flag to control if sync is on or not</div>
             <field name="allow_sync" />
-            
+            <button name="update_sync_config" type="object" string="Update Config" class="btn-primary" />
           </group>
         </sheet>
       </form>
