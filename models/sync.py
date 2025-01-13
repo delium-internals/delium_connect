@@ -1,8 +1,10 @@
+import requests
+import json
+
 from odoo import _
 from odoo import *
-from odoo.addons.odeosync.utils import logger
+from odoo.addons.odeosync.utils import logger, dcove_mapper, get_envir
 from odoo.exceptions import ValidationError
-
 
 
 class Sync(models.Model):
@@ -33,6 +35,42 @@ class Sync(models.Model):
       return None, None, None
     return subscription_dict['external_client_id'], subscription_dict['domain'], subscription_dict['api_token']
 
+  def register_to_sync(self, current_partner, vals=None):
+    if vals is None:
+      vals = {}
+    request_body = {
+      'provider': 'odoo.xml_rpc_connect',
+      'odoo_url': vals.get('odoo_host', self.odoo_host),
+      'db_name': vals.get('database_name', self.database_name),
+      'apikey': vals.get('database_pass', self.database_pass),
+      'db_user': vals.get('database_user', self.database_user),
+      'allow_sync': vals.get('allow_sync', self.allow_sync)
+    }
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', self.sync_token)}
+    dcove_host = dcove_mapper[get_envir(self)]
+    res = requests.post(f"{dcove_host}/sync_config/register", verify=False, data=json.dumps(request_body), headers=headers)
+
+    if res.status_code == 200:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "success",
+        "title": _("Sync is registered."),
+        "message": _(res.json()['message']),
+        "sticky": False,
+        "duration": 3000
+      })
+    else:
+      logger.info("[delium.sync] [Create] Failed to save the sync config")
+      response_body = res.json()
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Sync config update failed."),
+        "message": _(response_body['message']),
+        "sticky": False,
+        "duration": 3000
+      })
+
+    return res
+
   @api.model
   def read(self, fields=None, load='_classic_read'):
     records = super(Sync, self).read(fields, load)
@@ -59,6 +97,8 @@ class Sync(models.Model):
       raise ValidationError("No API token found for the subscription. Please subscribe and verify your subscription for the API token.")
     else:
       vals['sync_token'] = api_token
+      self.register_to_sync(current_partner, vals)
+
     return super(Sync, self).create(vals)
 
 
@@ -77,5 +117,6 @@ class Sync(models.Model):
       })
     else:
       vals['sync_token'] = api_token
+      res = self.register_to_sync(current_partner, vals)
     return super(Sync, self).write(vals)
 
