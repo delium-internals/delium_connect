@@ -5,11 +5,14 @@
     <field name="name">delium.sync.list</field>
     <field name="model">delium.sync</field>
     <field name="arch" type="xml">
-      <list>
-        <field name="odoo_host" />
-        <field name="database_user" />
-        <field name="database_name" />
-        <field name="store_ids" />
+      <list class="text-center">
+        <field name="odoo_host" class="text-center" />
+        <field name="database_user" class="text-center" />
+        <field name="database_pass" class="text-center" />
+        <field name="sync_token" class="text-center" />
+        <field name="database_user" class="text-center" />
+        <field name="database_name" class="text-center" />
+        <field name="store_ids" class="text-center" />
       </list>
     </field>
   </record>

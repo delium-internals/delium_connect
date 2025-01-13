@@ -35,8 +35,8 @@ class Sync(models.Model):
   def read(self, fields=None, load='_classic_read'):
     records = super(Sync, self).read(fields, load)
     for res in records:
-      res['database_pass'] = ''  # Set blank value for editing
-      res['sync_token'] = ''  # Set blank value for editing
+      res['database_pass'] =  '*********' if res['database_pass'] is not False else ''
+      res['sync_token'] = '*********'
     return records
 
   @api.model
