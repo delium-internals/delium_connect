@@ -3,14 +3,8 @@ import requests
 import json
 from odoo import _
 from odoo import *
-from odoo.addons.odeosync.utils import logger
+from odoo.addons.odeosync.utils import logger, proboscis_mapper
 from odoo.exceptions import ValidationError, UserError
-
-proboscis_mapper = {
-  'dev': 'https://qa.local:9090',
-  'qa': 'https://proboscis.delium.dev/api',
-  'prod': 'https://proboscis.delium.io/api'
-}
 
 
 class Subscription(models.Model):

@@ -3,6 +3,8 @@ from odoo import *
 from odoo.addons.odeosync.utils import logger
 from odoo.exceptions import ValidationError
 
+
+
 class Sync(models.Model):
   _name = "delium.sync"
   _description = "Sync module to sync data to Delium"
