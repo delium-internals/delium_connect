@@ -37,14 +37,14 @@ class Sync(models.Model):
   def read(self, fields=None, load='_classic_read'):
     records = super(Sync, self).read(fields, load)
     for res in records:
-      res['database_pass'] =  '*********' if res['database_pass'] is not False else ''
+      res['database_pass'] = '*********' if res['database_pass'] is not False else ''
       res['sync_token'] = '*********'
     return records
+
 
   @api.model
   def create(self, vals):
     logger.info(f"[delium.sync] [Create] Running create...")
-
     current_partner = self.env.user.partner_id
 
     external_client_id, domain, api_token = self.fetch_subscription_details()
@@ -64,7 +64,6 @@ class Sync(models.Model):
 
   def write(self, vals):
     logger.info(f"[delium.sync] [Write] Running write...")
-
     current_partner = self.env.user.partner_id
 
     external_client_id, domain, api_token = self.fetch_subscription_details()

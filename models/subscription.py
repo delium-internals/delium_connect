@@ -1,9 +1,9 @@
 import requests
-
 import json
+
 from odoo import _
 from odoo import *
-from odoo.addons.odeosync.utils import logger, proboscis_mapper
+from odoo.addons.odeosync.utils import logger, proboscis_mapper, get_envir
 from odoo.exceptions import ValidationError, UserError
 
 
@@ -67,17 +67,12 @@ class Subscription(models.Model):
     logger.info(f"Body: {body}")
     return body
 
-  def get_envir(self):
-    self.env.cr.execute("""SELECT envir FROM delium_environment""")
-    env_dict = self.env.cr.dictfetchone()
-    if env_dict is None:
-      return 'dev'
-    return env_dict['envir']
+
 
   def subscribe(self, vals=None):
     request_body = self.prepare_request_body(vals)
     headers = {'Content-Type': 'application/json'}
-    proboscis_host = proboscis_mapper[self.get_envir()]
+    proboscis_host = proboscis_mapper[get_envir(self)]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/create", verify=False, data=json.dumps(request_body), headers=headers)
     return res
 
@@ -220,7 +215,7 @@ class Subscription(models.Model):
           'type': 'danger',
         }
       }
-    proboscis_host = proboscis_mapper[self.get_envir()]
+    proboscis_host = proboscis_mapper[get_envir(self)]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/resend_otp", verify=False)
     if res.status_code == 200:
       return {
@@ -285,7 +280,7 @@ class Subscription(models.Model):
 
     request_body = self.prepare_request_body()
     headers = {'Content-Type': 'application/json'}
-    proboscis_host = proboscis_mapper[self.get_envir()]
+    proboscis_host = proboscis_mapper[get_envir(self)]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/{self.domain}/{self.user_phone}/{self.otp_input}", verify=False, data=json.dumps(request_body), headers=headers)
     if res.status_code == 200:
       response_body = res.json()
