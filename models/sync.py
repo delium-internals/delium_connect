@@ -49,7 +49,9 @@ class Sync(models.Model):
       'stores': json.dumps(stores),
       'allow_sync': vals.get('allow_sync', self.allow_sync)
     }
-    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', self.sync_token)}
+
+    external_client_id, domain, sync_token_from_subs = self.fetch_subscription_details()
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', sync_token_from_subs)}
     dcove_host = dcove_mapper[get_envir(self.env.cr)]
     res = requests.post(f"{dcove_host}/sync_config/register", verify=False, data=json.dumps(request_body), headers=headers)
 
