@@ -55,26 +55,7 @@ class Sync(models.Model):
     dcove_host = dcove_mapper[get_envir(self.env.cr)]
     res = requests.post(f"{dcove_host}/sync_config/register", verify=False, data=json.dumps(request_body), headers=headers)
 
-    if res.status_code == 200:
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "success",
-        "title": _("Sync is registered."),
-        "message": _(res.json()['message']),
-        "sticky": False,
-        "duration": 3000
-      })
-    else:
-      logger.info("[delium.sync] [Create] Failed to save the sync config")
-      response_body = res.json()
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "danger",
-        "title": _("Sync config update failed."),
-        "message": _(response_body['message']),
-        "sticky": False,
-        "duration": 3000
-      })
-
-    return res
+    return res, sync_token_from_subs
 
   @api.model
   def read(self, fields=None, load='_classic_read'):
@@ -83,7 +64,6 @@ class Sync(models.Model):
       res['database_pass'] = '*********' if res['database_pass'] is not False else ''
       res['sync_token'] = '*********'
     return records
-
 
   @api.model
   def create(self, vals):
@@ -102,10 +82,30 @@ class Sync(models.Model):
       raise ValidationError("No API token found for the subscription. Please subscribe and verify your subscription for the API token.")
     else:
       vals['sync_token'] = api_token
-      self.register_to_sync(current_partner, vals)
+      res, _api_token_used = self.register_to_sync(current_partner, vals)
+      self.notifs_from_response(current_partner, res)
 
     return super(Sync, self).create(vals)
 
+  def notifs_from_response(self, current_partner, res):
+    if res.status_code == 201:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "success",
+        "title": _("Sync is registered."),
+        "message": _(res.json()['message']),
+        "sticky": False,
+        "duration": 3000
+      })
+    else:
+      logger.info("[delium.sync] [Create] Failed to save the sync config")
+      response_body = res.json()
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Sync config update failed."),
+        "message": _(response_body['message']),
+        "sticky": False,
+        "duration": 3000
+      })
 
   def write(self, vals):
     logger.info(f"[delium.sync] [Write] Running write...")
@@ -122,12 +122,14 @@ class Sync(models.Model):
       })
     else:
       vals['sync_token'] = api_token
-      res = self.register_to_sync(current_partner, vals)
-    return super(Sync, self).write(vals)
+      res, _api_token_used = self.register_to_sync(current_partner, vals)
+      self.notifs_from_response(current_partner, res)
 
+    return super(Sync, self).write(vals)
 
   def update_sync_config(self):
     logger.info("[delium.sync] [Update Sync Config] Updating ...")
     current_partner = self.env.user.partner_id
-    self.register_to_sync(current_partner)
-
+    response, sync_token_used = self.register_to_sync(current_partner)
+    if response.status_code == 201:
+      self.sync_token = sync_token_used
