@@ -10,9 +10,9 @@ proboscis_mapper = {
 
 
 dcove_mapper = {
-  'dev': 'http://localhost:7777/',
-  'qa': 'https://dcove.delium.dev/',
-  'prod': 'https://dcove.delium.io/'
+  'dev': 'http://localhost:7777',
+  'qa': 'https://dcove.delium.dev',
+  'prod': 'https://dcove.delium.io'
 }
 
 
