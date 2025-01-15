@@ -38,12 +38,15 @@ class Sync(models.Model):
   def register_to_sync(self, current_partner, vals=None):
     if vals is None:
       vals = {}
+    self.env.cr.execute("""SELECT warehouse_id FROM odoo_sync_stores_rel """)
+    stores = [str(st[0]) for st in self.env.cr.fetchall()]
     request_body = {
       'provider': 'odoo.xml_rpc_connect',
       'odoo_url': vals.get('odoo_host', self.odoo_host),
       'db_name': vals.get('database_name', self.database_name),
       'apikey': vals.get('database_pass', self.database_pass),
       'db_user': vals.get('database_user', self.database_user),
+      'stores': json.dumps(stores),
       'allow_sync': vals.get('allow_sync', self.allow_sync)
     }
     headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', self.sync_token)}
