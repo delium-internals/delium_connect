@@ -228,12 +228,15 @@ class Subscription(models.Model):
         }
       }
     else:
+      response_body = res.json()
+      title = response_body['message'] if response_body['resend_in'] else "Failed to send OTP."
+      message = response_body['resend_in'] if response_body['resend_in'] else response_body['message']
       return {
         'type': 'ir.actions.client',
         'tag': 'display_notification',
         'params': {
-          'title': 'Failed to send OTP.',
-          'message': 'Please contact support.',
+          'title': title,
+          'message': message,
           'type': 'danger',
         }
       }
