@@ -4,7 +4,7 @@
   'summary': 'Integration app to allow syncing of data from Odoo to Delium.',
   'description': 'Integration app to allow syncing of data from Odoo to Delium.',
   'images': [
-    'static/images/de_logo.jpeg',
+    'static/images/banner.png',
   ],
   'application': True,
   'installable': True,
