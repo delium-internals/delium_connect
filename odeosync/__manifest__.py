@@ -6,7 +6,7 @@
   'images': [
     'static/images/de_logo.jpeg',
   ],
-  'icon': 'static/images/de_logo.png',
+  'icon': 'static/images/icon.png',
   'application': True,
   'installable': True,
   "version": "1.0.0",
