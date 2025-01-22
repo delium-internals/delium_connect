@@ -1,0 +1,8 @@
+<template id="css_assets_backend" name="CSS Backend Assets" inherit_id="web.assets_backend">
+  <xpath expr="." position="inside">
+    <link rel="stylesheet" type="text/css" href="odeosync/static/description/styles/style.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"/>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&display=swap" />
+  </xpath>
+</template>
