@@ -1,6 +1,6 @@
 from odoo import _
 from odoo import *
-from odoo.addons.odeosync.utils import logger
+from odoo.addons.delium_connect.utils import logger
 from odoo.exceptions import ValidationError
 
 class DeliumEnvironment(models.Model):

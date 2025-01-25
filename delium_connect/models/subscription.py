@@ -3,7 +3,7 @@ import json
 
 from odoo import _
 from odoo import *
-from odoo.addons.odeosync.utils import logger, proboscis_mapper, get_envir
+from odoo.addons.delium_connect.utils import logger, proboscis_mapper, get_envir
 from odoo.exceptions import ValidationError, UserError
 
 

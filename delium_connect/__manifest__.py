@@ -1,5 +1,5 @@
 {
-  "name": "Odeo Sync",
+  "name": "Delium Connect",
   "author": "DeliumTech",
   'summary': 'Integration app to allow syncing of data from Odoo to Delium.',
   'description': 'Integration app to allow syncing of data from Odoo to Delium.',
@@ -19,13 +19,5 @@
     "views/sync.xml",
     "views/env.xml",
     "views/main_menu.xml"
-  ],
-  'assets': {
-    'web.assets_backend': [
-      'odeosync/static/description/styles/style.css',  # Add your CSS file here
-    ],
-    'web.assets_frontend': [
-      'odeosync/static/description/styles/style.css',  # Add your CSS file here
-    ]
-  }
+  ]
 }
