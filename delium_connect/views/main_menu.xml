@@ -4,4 +4,5 @@
     <menuitem id="subscribe" name="Subscribe" parent="de_integrate" action="action_subscribe_to_de" />
     <menuitem id="set_env" name="Environment" parent="de_integrate" action="action_set_env" />
     <menuitem id="register_for_sync" name="Register For Sync" parent="de_integrate" action="action_sync_settings_input"/>
+    <menuitem id="unregister" name="Unsubscribe" parent="de_integrate" action="action_unsubscribe"/>
 </odoo>

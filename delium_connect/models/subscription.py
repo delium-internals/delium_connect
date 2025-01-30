@@ -24,6 +24,10 @@ class Subscription(models.Model):
   otp_validated = fields.Boolean(string="Otp Validated", default=False, readonly=True)
   otp_input = fields.Char(string="OTP: ")
 
+  phone_for_unsubscribe = fields.Char(string="Phone Number: ")
+  unsubscribe_otp_input = fields.Char(string="OTP: ")
+  unsubscribe_reason = fields.Char(string="Reason: ")
+
   external_client_id = fields.Char(string="External Client Id", required=True)
   name = fields.Char(string="Name", required=True)
   vertical = fields.Selection(string="Vertical", required=True, selection=[('CPG', 'CPG'), ('CDIT', 'CDIT')], default='CPG')
@@ -67,7 +71,21 @@ class Subscription(models.Model):
     logger.info(f"Body: {body}")
     return body
 
+  def fetch_subscription_details(self):
+    current_partner = self.env.user.partner_id
 
+    self.env.cr.execute("""SELECT external_client_id, domain, api_token FROM delium_subscription """)
+    subscription_dict = self.env.cr.dictfetchone()
+    if subscription_dict is None:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Subcsription details missing."),
+        "message": _("No subscription to Delium is found. You must first subscribe and verify it for configuring the sync."),
+        "sticky": False,
+        "duration": 3000
+      })
+      return None, None, None
+    return subscription_dict['external_client_id'], subscription_dict['domain'], subscription_dict['api_token']
 
   def subscribe(self, vals=None):
     request_body = self.prepare_request_body(vals)
@@ -360,6 +378,92 @@ class Subscription(models.Model):
         'tag': 'display_notification',
         'params': {
           'title': 'Subscription request failed.',
+          'message': response_body['message'],
+          'type': 'danger',
+        }
+      }
+
+  def initiate_unsubscribe(self):
+    external_client_id, domain, api_token = self.fetch_subscription_details()
+    if not api_token:
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Subcsription details missing.',
+          'message': 'No API token found for the subscription. Please subscribe and verify your subscription for the API token first.',
+          'type': 'danger',
+        }
+      }
+
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': api_token}
+    phone_for_unsubscribe = self.phone_for_unsubscribe
+    proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
+    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/initiate_demote/{phone_for_unsubscribe}", verify=False, data=json.dumps(request_body), headers=headers)
+    if res.status_code == 200:
+      response_body = res.json()
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "success",
+        "title": _('OTP sent for unsubscribing'),
+        "message": _(response_body['message']),
+        "sticky": False,
+        "duration": 3000
+      })
+      self.domain = response_body['domain']
+      self.otp_validated = False
+    else:
+      logger.info("[delium.subscription] [UnsubscribeInitiate] Initate unsubscribe failed.")
+      response_body = res.json()
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Unsubscription request failed.',
+          'message': response_body['message'],
+          'type': 'danger',
+        }
+      }
+
+
+  def unsubscribe(self):
+    external_client_id, domain, api_token = self.fetch_subscription_details()
+    if not api_token:
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Subcsription details missing.',
+          'message': 'No API token found for the subscription. Please subscribe and verify your subscription for the API token first.',
+          'type': 'danger',
+        }
+      }
+
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': api_token}
+    phone_for_unsubscribe = self.phone_for_unsubscribe
+    otp_for_demote = self.unsubscribe_otp_input
+    proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
+    body = {
+      "reason": self.unsubscribe_reason
+    }
+
+    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/demote/{phone_for_unsubscribe}/{otp_for_demote}", verify=False, data=json.dumps(body), headers=headers)
+
+    if res.status_code == 200:
+      # Delete the sync configs
+      sync_configs = self.env["delium.sync"].search([])
+      if sync_configs:
+        sync_configs.unlink()
+      # Delete the subscription details.
+      for record in self:
+        record.unlink()
+    else:
+      logger.info("[delium.subscription] [Unsubscribe] Unsubscribe failed.")
+      response_body = res.json()
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Unsubscription failed.',
           'message': response_body['message'],
           'type': 'danger',
         }
