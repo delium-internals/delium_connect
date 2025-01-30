@@ -70,6 +70,20 @@ class Sync(models.Model):
     logger.info(f"[delium.sync] [Create] Running create...")
     current_partner = self.env.user.partner_id
 
+    self.env.cr.execute("""SELECT * FROM delium_sync """)
+    result = self.env.cr.fetchone()
+
+    if result is not None:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Subscription already exists."),
+        "message": _("You can have only one sync config."),
+        "sticky": False,
+        "duration": 3000
+      })
+      raise ValidationError("Sync config already exists. You can have only one sync config for the Miner.")
+
+
     external_client_id, domain, api_token = self.fetch_subscription_details()
     if not api_token:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
