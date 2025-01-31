@@ -10,7 +10,7 @@
   'installable': True,
   "version": "1.0.0",
   'depends': ['base', 'stock'],
-  'website': 'https://delium.ai',
+  'website': 'https://www.delium.ai',
   'license': 'LGPL-3',
   "data": [
     "security/ir.model.access.csv",
