@@ -14,6 +14,7 @@
   'license': 'LGPL-3',
   "data": [
     "security/ir.model.access.csv",
+    "views/unsubscribe.xml",
     "views/subscribe.xml",
     "views/sync.xml",
     "views/env.xml",

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <record id="view_delium_unsubscribe_list" model="ir.ui.view">
+    <field name="name">delium.unsubscribe.list</field>
+    <field name="model">delium.unsubscribe</field>
+    <field name="arch" type="xml">
+      <list class="text-center">
+        <field name="phone_for_unsubscribe" class="text-center" />
+        <field name="unsubscribe_reason" class="text-center" />
+        <field name="status" class="text-center" />
+      </list>
+    </field>
+  </record>
+
+  <record id="view_delium_unsubscribe_form" model="ir.ui.view">
+    <field name="name">delium.unsubscribe.form</field>
+    <field name="model">delium.unsubscribe</field>
+    <field name="arch" type="xml">
+      <form string="Unsubscribe">
+        <p><b><i>
+          To unsubscribe, click on the below button. Validation is required via OTP
+        </i></b></p>
+        <sheet name="Unsubscribe">
+          <div class="o_stat_text">
+            <h1>Unsubscribe From Delium</h1>
+          </div>
+          <group>
+            <div class="o_stat_text">Phone number to send the OTP. Has to be a valid Miner User</div>
+            <field name="phone_for_unsubscribe"  />
+            <div class="o_stat_text">Initiate unsubscribe to receive an OTP.</div>
+            <button name="initiate_unsubscribe" type="object" string="Initiate Unsubscribe" class="btn-primary" />
+            <div class="o_stat_text">Enter the OTP to unsubscribe</div>
+            <field name="unsubscribe_otp_input"/>
+            <div class="o_stat_text">Reason for unsubscribing</div>
+            <field name="unsubscribe_reason"/>
+            <button name="unsubscribe" type="object" string="Unsubscribe" class="btn btn-danger"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_unsubscribe" model="ir.actions.act_window">
+    <field name="name">Unsubscribe</field>
+    <field name="res_model">delium.unsubscribe</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        This form is used to configure the sync settings for an integration with Delium's DCove.
+      </p>
+    </field>
+  </record>
+</odoo>

@@ -27,7 +27,7 @@ class Sync(models.Model):
     if subscription_dict is None:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
-        "title": _("Subcsription details missing."),
+        "title": _("Subscription details missing."),
         "message": _("No subscription to Delium is found. You must first subscribe and verify it for configuring the sync."),
         "sticky": False,
         "duration": 3000
@@ -88,7 +88,7 @@ class Sync(models.Model):
     if not api_token:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
-        "title": _("Subcsription details missing."),
+        "title": _("Subscription details missing."),
         "message": _("No API token found for the subscription. Please subscribe and verify your subscription for the API token first."),
         "sticky": False,
         "duration": 3000
@@ -129,7 +129,7 @@ class Sync(models.Model):
     if not api_token:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
-        "title": _("Subcsription details missing."),
+        "title": _("Subscription details missing."),
         "message": _("No API token found for the subscription. Please subscribe and verify your subscription for the API token first."),
         "sticky": False,
         "duration": 3000

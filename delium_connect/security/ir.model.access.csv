@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_delium_sync,delium.sync,model_delium_sync,base.group_user,1,1,1,1
 access_delium_subscription,delium.subscription,model_delium_subscription,base.group_user,1,1,1,1
+access_delium_unsubscribe,delium.unsubscribe,model_delium_unsubscribe,base.group_user,1,1,1,1
 access_delium_environment,delium.environment,model_delium_environment,base.group_user,1,1,1,1
