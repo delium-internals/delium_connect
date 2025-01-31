@@ -11,9 +11,9 @@ class Unsubscribe(models.Model):
   _name = "delium.unsubscribe"
   _description = "Unsubscribe module to stop subscription to Delium"
 
-  phone_for_unsubscribe = fields.Char(string="Phone Number: ", required=True)
-  unsubscribe_otp_input = fields.Char(string="OTP: ")
-  unsubscribe_reason = fields.Char(string="Reason: ", required=True)
+  phone_for_unsubscribe = fields.Char(string="Phone Number", required=True)
+  unsubscribe_otp_input = fields.Char(string="OTP")
+  unsubscribe_reason = fields.Char(string="Reason", required=True)
   status = fields.Char(default="subscribed")
 
   def fetch_subscription_details(self):
