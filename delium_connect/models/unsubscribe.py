@@ -181,12 +181,16 @@ class Unsubscribe(models.Model):
     if res.status_code == 200:
       # Delete the sync configs
       sync_configs = self.env["delium.sync"].search([])
-      if sync_configs:
-        sync_configs.unlink()
-      # Delete the subscription details.
-      subscription = self.env["delium.subscription"].search([])
-      if subscription:
-        subscription.unlink()
+      headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', api_token)}
+      dcove_host = dcove_mapper[get_envir(self.env.cr)]
+      sync_res = requests.post(f"{dcove_host}/sync_config/deregister", verify=False, headers=headers)
+      if sync_res.status_code == 200:
+        if sync_configs:
+          sync_configs.unlink()
+        # Delete the subscription details.
+        subscription = self.env["delium.subscription"].search([])
+        if subscription:
+          subscription.unlink()
       self.status = "unsubscribed"
       return {
         'type': 'ir.actions.client',
