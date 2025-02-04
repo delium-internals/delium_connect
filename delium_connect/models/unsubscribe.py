@@ -11,6 +11,7 @@ class Unsubscribe(models.Model):
   _name = "delium.unsubscribe"
   _description = "Unsubscribe module to stop subscription to Delium"
 
+  external_client_id = fields.Char(string="external_client_id", required=True)
   phone_for_unsubscribe = fields.Char(string="Phone Number", required=True)
   unsubscribe_otp_input = fields.Char(string="OTP")
   unsubscribe_reason = fields.Char(string="Reason", required=True)
@@ -36,17 +37,17 @@ class Unsubscribe(models.Model):
     if res.status_code == 200:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "success",
-        "title": _("Unsubscription complete."),
+        "title": _("Unsubscription initiated."),
         "message": _(res.json()['message']),
         "sticky": False,
         "duration": 3000
       })
     else:
-      logger.info("[delium.unsubscribe] [Create] Failed to save the sync config")
+      logger.info("[delium.unsubscribe] [Create] Failed to initiate unsubscribe")
       response_body = res.json()
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
-        "title": _("Unsubscribing failed."),
+        "title": _("Unsubscribing initiate failed."),
         "message": _(response_body['message']),
         "sticky": False,
         "duration": 3000
@@ -57,6 +58,7 @@ class Unsubscribe(models.Model):
     logger.info("[delium.unsubscribe] [Create] Running create method ...")
     current_partner = self.env.user.partner_id
 
+    external_client_id, domain, api_token = self.fetch_subscription_details()
     self.env.cr.execute("""SELECT * FROM delium_unsubscribe """)
     result = self.env.cr.fetchone()
 
@@ -70,7 +72,6 @@ class Unsubscribe(models.Model):
       })
       raise ValidationError("Already unsubscribed.")
 
-    external_client_id, domain, api_token = self.fetch_subscription_details()
     if not api_token:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
@@ -80,6 +81,11 @@ class Unsubscribe(models.Model):
         "duration": 3000
       })
       raise ValidationError("No valid subscription to unsubscribe from.")
+    else:
+      vals['external_client_id'] = external_client_id
+      res = self.do_initiate_unsubscribe(api_token)
+      self.notifs_from_response(res)
+
     return super(Unsubscribe, self).create(vals)
 
   @api.model
@@ -109,7 +115,7 @@ class Unsubscribe(models.Model):
         "sticky": False,
         "duration": 3000
       })
-      return super(Unsubscribe, self).write(vals)
+
     return super(Unsubscribe, self).write(vals)
 
   def initiate_unsubscribe(self):
@@ -126,10 +132,7 @@ class Unsubscribe(models.Model):
         }
       }
 
-    headers = {'Content-Type': 'application/json', 'X-DELIUM-API-TOKEN': api_token}
-    phone_for_unsubscribe = self.phone_for_unsubscribe
-    proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
-    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/initiate_demote/{phone_for_unsubscribe}", verify=False, headers=headers)
+    res = self.do_initiate_unsubscribe(api_token)
     if res.status_code == 200:
       response_body = res.json()
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
@@ -153,6 +156,12 @@ class Unsubscribe(models.Model):
         }
       }
 
+  def do_initiate_unsubscribe(self, api_token):
+    headers = {'Content-Type': 'application/json', 'X-DELIUM-API-TOKEN': api_token}
+    phone_for_unsubscribe = self.phone_for_unsubscribe
+    proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
+    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/initiate_demote/{phone_for_unsubscribe}", verify=False, headers=headers)
+    return res
 
   def unsubscribe(self):
     current_partner = self.env.user.partner_id
@@ -191,16 +200,28 @@ class Unsubscribe(models.Model):
         subscription = self.env["delium.subscription"].search([])
         if subscription:
           subscription.unlink()
-      self.status = "unsubscribed"
-      return {
-        'type': 'ir.actions.client',
-        'tag': 'display_notification',
-        'params': {
-          'title': 'Unsubscription completed.',
-          'message': "Sorry to see you go. Please write to us about how we can improve the product to sales@delium.co.",
-          'type': 'danger',
+        self.status = "unsubscribed"
+        return {
+          'type': 'ir.actions.client',
+          'tag': 'display_notification',
+          'params': {
+            'title': 'Unsubscription completed.',
+            'message': "Sorry to see you go. Please write to us about how we can improve the product to sales@delium.co.",
+            'type': 'danger',
+          }
         }
-      }
+      else:
+        logger.info("[delium.unsubscribe] [Unsubscribe] Unsubscribe failed.")
+        response_body = res.json()
+        return {
+          'type': 'ir.actions.client',
+          'tag': 'display_notification',
+          'params': {
+            'title': 'Unsubscription failed.',
+            'message': response_body['message'],
+            'type': 'danger',
+          }
+        }
     else:
       logger.info("[delium.unsubscribe] [Unsubscribe] Unsubscribe failed.")
       response_body = res.json()
