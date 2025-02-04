@@ -35,7 +35,7 @@ class Sync(models.Model):
       return None, None, None
     return subscription_dict['external_client_id'], subscription_dict['domain'], subscription_dict['api_token']
 
-  def register_to_sync(self, current_partner, vals=None):
+  def register_to_sync(self, api_token, vals=None):
     if vals is None:
       vals = {}
     self.env.cr.execute("""SELECT warehouse_id FROM odoo_sync_stores_rel """)
@@ -50,12 +50,11 @@ class Sync(models.Model):
       'allow_sync': vals.get('allow_sync', self.allow_sync)
     }
 
-    external_client_id, domain, sync_token_from_subs = self.fetch_subscription_details()
-    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', sync_token_from_subs)}
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', api_token)}
     dcove_host = dcove_mapper[get_envir(self.env.cr)]
     res = requests.post(f"{dcove_host}/sync_config/register", verify=False, data=json.dumps(request_body), headers=headers)
 
-    return res, sync_token_from_subs
+    return res, api_token
 
   @api.model
   def read(self, fields=None, load='_classic_read'):
@@ -96,7 +95,7 @@ class Sync(models.Model):
       raise ValidationError("No API token found for the subscription. Please subscribe and verify your subscription for the API token.")
     else:
       vals['sync_token'] = api_token
-      res, _api_token_used = self.register_to_sync(current_partner, vals)
+      res, _api_token_used = self.register_to_sync(api_token, vals)
       self.notifs_from_response(current_partner, res)
 
     return super(Sync, self).create(vals)
@@ -136,7 +135,7 @@ class Sync(models.Model):
       })
     else:
       vals['sync_token'] = api_token
-      res, _api_token_used = self.register_to_sync(current_partner, vals)
+      res, _api_token_used = self.register_to_sync(api_token, vals)
       self.notifs_from_response(current_partner, res)
 
     return super(Sync, self).write(vals)
@@ -144,6 +143,15 @@ class Sync(models.Model):
   def update_sync_config(self):
     logger.info("[delium.sync] [Update Sync Config] Updating ...")
     current_partner = self.env.user.partner_id
-    response, sync_token_used = self.register_to_sync(current_partner)
+    external_client_id, domain, api_token = self.fetch_subscription_details()
+    if not api_token:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Subscription details missing."),
+        "message": _("No API token found for the subscription. Please subscribe and verify your subscription for the API token first."),
+        "sticky": False,
+        "duration": 3000
+      })
+    response, sync_token_used = self.register_to_sync(api_token)
     if response.status_code == 201:
-      self.sync_token = sync_token_used
+      self.sync_token = api_token
