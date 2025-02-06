@@ -303,6 +303,10 @@ class Subscription(models.Model):
       response_body = res.json()
       self.api_token = response_body['apiToken']
       self.otp_validated = True
+
+      unsubscribe_entry = self.env["delium.unsubscribe"].search([])
+      if unsubscribe_entry:
+        unsubscribe_entry.unlink()
       return {
         'type': 'ir.actions.client',
         'tag': 'display_notification',
