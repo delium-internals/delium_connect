@@ -179,6 +179,29 @@ class Unsubscribe(models.Model):
         }
       }
 
+    # Mark sync as disabled.
+    headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': api_token}
+    dcove_host = dcove_mapper[get_envir(self.env.cr)]
+    sync_res = requests.post(f"{dcove_host}/sync_config/deregister", verify=False, headers=headers)
+    if sync_res.status_code == 200:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "success",
+        "title": _('Sync disable complete.'),
+        "message": _('Marked sync as disabled.'),
+        "sticky": False,
+        "duration": 3000
+      })
+    else:
+      logger.info("[delium.unsubscribe] [Unsubscribe] Unsubscribe failed.")
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "success",
+        "title": _('Unsubscription failed.'),
+        "message": _('Failed to mark sync as disabled'),
+        "sticky": False,
+        "duration": 3000
+      })
+
+    # Deprovision in proboscis
     headers = {'Content-Type': 'application/json', 'X-DELIUM-API-TOKEN': api_token}
     phone_for_unsubscribe = self.phone_for_unsubscribe
     otp_for_demote = self.unsubscribe_otp_input
@@ -186,44 +209,27 @@ class Unsubscribe(models.Model):
     body = {
       "reason": self.unsubscribe_reason
     }
-
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/demote/{phone_for_unsubscribe}/{otp_for_demote}", verify=False, data=json.dumps(body), headers=headers)
 
     if res.status_code == 200:
       # Delete the sync configs
       sync_configs = self.env["delium.sync"].search([])
-      headers = {'Content-Type': 'application/json', 'X-SYNC-TOKEN': vals.get('sync_token', api_token)}
-      dcove_host = dcove_mapper[get_envir(self.env.cr)]
-      sync_res = requests.post(f"{dcove_host}/sync_config/deregister", verify=False, headers=headers)
-      if sync_res.status_code == 200:
-        if sync_configs:
-          sync_configs.unlink()
-        # Delete the subscription details.
-        subscription = self.env["delium.subscription"].search([])
-        if subscription:
-          subscription.unlink()
-        self.status = "unsubscribed"
-        return {
-          'type': 'ir.actions.client',
-          'tag': 'display_notification',
-          'params': {
-            'title': 'Unsubscription completed.',
-            'message': "Sorry to see you go. Please write to us about how we can improve the product to sales@delium.co.",
-            'type': 'danger',
-          }
+      if sync_configs:
+        sync_configs.unlink()
+      # Delete the subscription details.
+      subscription = self.env["delium.subscription"].search([])
+      if subscription:
+        subscription.unlink()
+      self.status = "unsubscribed"
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Unsubscription completed.',
+          'message': "Sorry to see you go. Please write to us about how we can improve the product to sales@delium.co.",
+          'type': 'danger',
         }
-      else:
-        logger.info("[delium.unsubscribe] [Unsubscribe] Unsubscribe failed.")
-        response_body = res.json()
-        return {
-          'type': 'ir.actions.client',
-          'tag': 'display_notification',
-          'params': {
-            'title': 'Unsubscription failed.',
-            'message': response_body['message'],
-            'type': 'danger',
-          }
-        }
+      }
     else:
       logger.info("[delium.unsubscribe] [Unsubscribe] Unsubscribe failed.")
       response_body = res.json()
@@ -231,7 +237,7 @@ class Unsubscribe(models.Model):
         'type': 'ir.actions.client',
         'tag': 'display_notification',
         'params': {
-          'title': 'Unsubscription failed.',
+          'title': "Unsubscription failed from Delium's CRM.",
           'message': response_body['message'],
           'type': 'danger',
         }
