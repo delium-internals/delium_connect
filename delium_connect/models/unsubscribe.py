@@ -65,12 +65,12 @@ class Unsubscribe(models.Model):
     if result is not None:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "danger",
-        "title": _("Already unsubscribed."),
-        "message": _("Nothing to do."),
+        "title": _("Unsubscribe already initiated"),
+        "message": _("Retry with the existing unsubscribe entry."),
         "sticky": False,
         "duration": 3000
       })
-      raise ValidationError("Already unsubscribed.")
+      raise ValidationError("Already initiated. Retry with the existing unsubscribe entry.")
 
     if not api_token:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
