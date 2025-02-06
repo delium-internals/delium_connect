@@ -88,11 +88,8 @@ class Unsubscribe(models.Model):
 
     return super(Unsubscribe, self).create(vals)
 
-  @api.model
-  def write(self, vals):
-    logger.info("[delium.unsubscribe] [Write] Running write method ...")
+  def initiate_unsubscribe(self):
     current_partner = self.env.user.partner_id
-
     self.env.cr.execute("""SELECT * FROM delium_unsubscribe WHERE status = 'unsubscribed'""")
     result = self.env.cr.fetchone()
 
@@ -106,20 +103,6 @@ class Unsubscribe(models.Model):
       })
       return
 
-    external_client_id, domain, api_token = self.fetch_subscription_details()
-    if not api_token:
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "danger",
-        "title": _("Subcsription details missing."),
-        "message": _("Nothing to unsubscribe from."),
-        "sticky": False,
-        "duration": 3000
-      })
-
-    return super(Unsubscribe, self).write(vals)
-
-  def initiate_unsubscribe(self):
-    current_partner = self.env.user.partner_id
     external_client_id, domain, api_token = self.fetch_subscription_details()
     if not api_token:
       return {
@@ -167,6 +150,19 @@ class Unsubscribe(models.Model):
 
   def unsubscribe(self):
     current_partner = self.env.user.partner_id
+    self.env.cr.execute("""SELECT * FROM delium_unsubscribe WHERE status = 'unsubscribed'""")
+    result = self.env.cr.fetchone()
+
+    if result is not None:
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "danger",
+        "title": _("Already unsubscribed."),
+        "message": _("Nothing to do."),
+        "sticky": False,
+        "duration": 3000
+      })
+      return
+
     external_client_id, domain, api_token = self.fetch_subscription_details()
     if not api_token:
       return {
