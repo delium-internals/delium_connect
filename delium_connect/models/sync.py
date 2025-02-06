@@ -101,7 +101,7 @@ class Sync(models.Model):
     return super(Sync, self).create(vals)
 
   def notifs_from_response(self, current_partner, res):
-    if res.status_code == 201:
+    if res.status_code == 200:
       self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
         "type": "success",
         "title": _("Sync is registered."),
@@ -153,5 +153,5 @@ class Sync(models.Model):
         "duration": 3000
       })
     response, sync_token_used = self.register_to_sync(api_token)
-    if response.status_code == 201:
+    if response.status_code == 200:
       self.sync_token = api_token
