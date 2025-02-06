@@ -83,8 +83,8 @@ class Unsubscribe(models.Model):
       raise ValidationError("No valid subscription to unsubscribe from.")
     else:
       vals['external_client_id'] = external_client_id
-      res = self.do_initiate_unsubscribe(api_token)
-      self.notifs_from_response(res)
+      res = self.do_initiate_unsubscribe(api_token, vals)
+      self.notifs_from_response(current_partner, res)
 
     return super(Unsubscribe, self).create(vals)
 
@@ -156,9 +156,11 @@ class Unsubscribe(models.Model):
         }
       }
 
-  def do_initiate_unsubscribe(self, api_token):
+  def do_initiate_unsubscribe(self, api_token, vals=None):
+    if vals is None:
+      vals = {}
     headers = {'Content-Type': 'application/json', 'X-DELIUM-API-TOKEN': api_token}
-    phone_for_unsubscribe = self.phone_for_unsubscribe
+    phone_for_unsubscribe = vals.get('phone_for_unsubscribe', self.phone_for_unsubscribe)
     proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
     res = requests.post(f"{proboscis_host}/ext/ephemeral_client/initiate_demote/{phone_for_unsubscribe}", verify=False, headers=headers)
     return res
