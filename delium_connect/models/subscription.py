@@ -36,6 +36,7 @@ class Subscription(models.Model):
   billing_email = fields.Char(string="Billing Email", required=True)
   tax_name = fields.Selection(string="Tax Name", required=True, selection=[('GST_L', 'GST_L'), ('GST_R', 'GST_R')], default='GST_L')
   gst_no = fields.Char(string="Gst No", required=True)
+  temp_token = fields.Char(string="Temp Token")
 
 
   def prepare_request_body(self, vals=None):
@@ -64,6 +65,9 @@ class Subscription(models.Model):
       "taxName": vals.get('tax_name', self.tax_name),
       "gstNo": vals.get('gst_no', self.gst_no)
     }
+    temp_token_used = vals.get('temp_token', self.temp_token)
+    if temp_token_used is not None:
+      body['temp_token'] = temp_token_used
     logger.info(f"Body: {body}")
     return body
 
@@ -118,19 +122,29 @@ class Subscription(models.Model):
     res = self.subscribe(vals)
 
     if res.status_code == 200:
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "success",
-        "title": _("Subscription request recorded. Verification Pending"),
-        "message": _(res.json()['message']),
-        "sticky": False,
-        "duration": 3000
-      })
       response_body = res.json()
-      logger.info("[delium.subscription] [Create] Response Body on create: ")
-      logger.info(response_body)
-      vals['domain'] = response_body['domain']
-      vals['otp_validated'] = False
-
+      if response_body.get('tempTokenUsed', False):
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _("Subscription details fetched and saved"),
+          "message": _(res.json()['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        vals['api_token'] = response_body['apiToken']
+        vals['domain'] = response_body['domain']
+        vals['otp_validated'] = True
+      else:
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _("Subscription request recorded. Verification Pending"),
+          "message": _(res.json()['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        response_body = res.json()
+        vals['domain'] = response_body['domain']
+        vals['otp_validated'] = False
     else:
       logger.info("[delium.subscription] [Create] Subscribing to The Miner failed.")
       response_body = res.json()
@@ -184,15 +198,27 @@ class Subscription(models.Model):
     res = self.subscribe(vals)
     if res.status_code == 200:
       response_body = res.json()
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "success",
-        "title": _('Subscription success'),
-        "message": _(response_body['message']),
-        "sticky": False,
-        "duration": 3000
-      })
-      self.domain = response_body['domain']
-      self.otp_validated = False
+      if response_body.get('tempTokenUsed', False):
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _("Subscription details fetched and saved"),
+          "message": _(res.json()['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        vals['api_token'] = response_body['apiToken']
+        vals['domain'] = response_body['domain']
+        vals['otp_validated'] = True
+      else:
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _('Subscription success'),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        self.domain = response_body['domain']
+        self.otp_validated = False
     else:
       logger.info("[delium.subscription] [Write] Subscribing to The Miner failed.")
       response_body = res.json()
@@ -360,15 +386,27 @@ class Subscription(models.Model):
     res = self.subscribe()
     if res.status_code == 200:
       response_body = res.json()
-      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
-        "type": "success",
-        "title": _('Subscription success'),
-        "message": _(response_body['message']),
-        "sticky": False,
-        "duration": 3000
-      })
-      self.domain = response_body['domain']
-      self.otp_validated = False
+      if response_body.get('tempTokenUsed', False):
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _("Subscription details fetched and saved"),
+          "message": _(res.json()['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        self.api_token = response_body['apiToken']
+        self.domain = response_body['domain']
+        self.otp_validated = True
+      else:
+        self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+          "type": "success",
+          "title": _('Subscription success'),
+          "message": _(response_body['message']),
+          "sticky": False,
+          "duration": 3000
+        })
+        self.domain = response_body['domain']
+        self.otp_validated = False
     else:
       logger.info("[delium.subscription] [Resubscribe] Subscribing to The Miner failed.")
       response_body = res.json()
@@ -378,6 +416,54 @@ class Subscription(models.Model):
         'tag': 'display_notification',
         'params': {
           'title': 'Subscription request failed.',
+          'message': response_body['message'],
+          'type': 'danger',
+        }
+      }
+
+  def generate_temp_token(self):
+    logger.info("[delium.subscription] [Gen Temp Token] Generating Temp Token ...")
+    current_partner = self.env.user.partner_id
+
+    self.env.cr.execute("""SELECT api_token, domain FROM delium_subscription """)
+    db_fields = self.env.cr.fetchone()
+    api_token_from_db, domain_from_db = db_fields
+    if domain_from_db is not None:
+      logger.info("[delium.subscription] [Gen Temp Token] Subscription already exists.")
+      self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
+        "type": "info",
+        "title": _("Already subscribed."),
+        "message": _("You have already subscribed. No need to generate a temp token"),
+        "sticky": False,
+        "duration": 3000
+      })
+      return
+
+    request_body = self.prepare_request_body()
+    headers = {'Content-Type': 'application/json'}
+    proboscis_host = proboscis_mapper[get_envir(self.env.cr)]
+    res = requests.post(f"{proboscis_host}/ext/ephemeral_client/generate_temp_token", verify=False, data=json.dumps(request_body), headers=headers)
+
+    if res.status_code == 200:
+      response_body = res.json()
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Temp Token Generated',
+          'message': response_body['message'],
+          'type': 'success',
+        }
+      }
+    else:
+      logger.info("[delium.subscription] [Gen Temp Token] Generating temp token failed.")
+      response_body = res.json()
+
+      return {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+          'title': 'Temp Token generation failed.',
           'message': response_body['message'],
           'type': 'danger',
         }

@@ -50,17 +50,25 @@
               <field name="billing_number" />
               <div class="o_stat_text">Billing Email ID for invoicing</div>
               <field name="billing_email" />
-              <button name="resubscribe" type="object" string="Subscribe Again" class="btn-primary" />
+
             </group>
             <group>
               <separator string="User Details"/>
-              <div class="o_stat_text">Initial User Name for The Miner</div>
+              <div class="o_stat_text">Initial Username for The Miner</div>
               <field name="user_name" />
               <div class="o_stat_text">Initial User Email for The Miner</div>
               <field name="user_email" />
               <div class="o_stat_text">Initial User Phone Number for The Miner</div>
               <field name="user_phone" />
+              <separator string="Resubscribe with a Temp token"/>
+              <div class="o_stat_text">Use this if you have already subscribed and want to reuse the previous subscription.</div>
+              <field name="temp_token" />
+              <button name="generate_temp_token" type="object" string="Generate Token" class="btn-primary" />
+              <separator string="Submit"/>
+              <button name="resubscribe" type="object" string="Subscribe Again" class="btn-primary" />
+
             </group>
+
           </group>
           <group>
             <separator string="Validate your subscription"/>
