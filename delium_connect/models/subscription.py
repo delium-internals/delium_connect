@@ -67,7 +67,7 @@ class Subscription(models.Model):
     }
     temp_token_used = vals.get('temp_token', self.temp_token)
     if temp_token_used is not None:
-      body['temp_token'] = temp_token_used
+      body['tempToken'] = temp_token_used
     logger.info(f"Body: {body}")
     return body
 
