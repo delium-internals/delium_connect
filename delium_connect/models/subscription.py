@@ -134,6 +134,7 @@ class Subscription(models.Model):
         vals['api_token'] = response_body['apiToken']
         vals['domain'] = response_body['domain']
         vals['otp_validated'] = True
+        return super(Subscription, self).create(vals)
       else:
         self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
           "type": "success",
@@ -209,6 +210,7 @@ class Subscription(models.Model):
         vals['api_token'] = response_body['apiToken']
         vals['domain'] = response_body['domain']
         vals['otp_validated'] = True
+        return super(Subscription, self).write(vals)
       else:
         self.env["bus.bus"]._sendone(current_partner, "simple_notification", {
           "type": "success",
