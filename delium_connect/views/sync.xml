@@ -24,6 +24,7 @@
       <form string="Sync Config">
         <p><b><i>
           The below configurations are used during the sync of data. Once registered, your data will be synced on a regular basis.
+          This integration is in beta and will be turned off for now. Please contact support for more details.
         </i></b></p>
         <sheet name="Database connection configuration.">
           <div class="o_stat_text">

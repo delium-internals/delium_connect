@@ -26,3 +26,4 @@ class DeliumEnvironment(models.Model):
         "duration": 3000
       })
       raise ValidationError("You can have only one config for the environment.")
+    return super(DeliumEnvironment, self).create(vals)
